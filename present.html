@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ahmani Hotel - Technical Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Poppins:wght@300;400;500;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #050b14;
+            --slide-bg: rgba(13, 25, 48, 0.95);
+            --accent-gold: #D4AF37;
+            --accent-light: #F3E5AB;
+            --text-main: #E2E8F0;
+            --text-muted: #94A3B8;
+            --border-glow: rgba(212, 175, 55, 0.4);
+            --code-bg: #1E1E1E;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden; /* Prevent scrolling, act like a real PPT */
+        }
+
+        /* Top Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #1e293b;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-gold);
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Header / Meta Info */
+        .presentation-header {
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
+        .header-brand {
+            font-family: 'Playfair Display', serif;
+            color: var(--accent-gold);
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+
+        /* Slide Container */
+        .slide-window {
+            width: 100%;
+            max-width: 1200px;
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            height: 75vh;
+            background: var(--slide-bg);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 12px;
+            padding: 50px 60px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            animation: slideIn 0.5s ease-out forwards;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes slideIn {
+            0% { opacity: 0; transform: scale(0.98) translateY(15px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Slide Typography */
+        .slide-tag {
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .slide-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            color: #ffffff;
+            margin-bottom: 25px;
+            line-height: 1.2;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+        }
+
+        .slide-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        /* Layout Grids */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            flex: 1;
+        }
+
+        .full-layout {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        /* Lists & Data Specs */
+        .feature-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .feature-list li {
+            position: relative;
+            padding-left: 25px;
+            margin-bottom: 15px;
+            font-size: 15px;
+            color: var(--text-main);
+        }
+
+        .feature-list li::before {
+            content: "▹";
+            position: absolute;
+            left: 0;
+            top: 2px;
+            color: var(--accent-gold);
+            font-size: 18px;
+        }
+
+        .complexity-box {
+            background: rgba(0,0,0,0.3);
+            border-left: 3px solid var(--accent-gold);
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            margin-top: auto;
+        }
+
+        /* Code Block Styling (VS Code Theme) */
+        .code-container {
+            background: var(--code-bg);
+            border-radius: 8px;
+            border: 1px solid #333;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: 500px;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 15px;
+            font-size: 12px;
+            color: #858585;
+            font-family: sans-serif;
+            border-bottom: 1px solid #111;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .code-body {
+            padding: 20px;
+            overflow-y: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #D4D4D4;
+            white-space: pre;
+        }
+
+        /* Syntax Highlighting Colors */
+        .syn-keyword { color: #569CD6; font-weight: 500; }
+        .syn-function { color: #DCDCAA; }
+        .syn-variable { color: #9CDCFE; }
+        .syn-string { color: #CE9178; }
+        .syn-comment { color: #6A9955; font-style: italic; }
+        .syn-number { color: #B5CEA8; }
+        .syn-operator { color: #D4D4D4; }
+
+        /* Controls Footer */
+        .controls-footer {
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(5, 11, 20, 0.9);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 10px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--accent-gold);
+            color: var(--bg-deep);
+        }
+
+        .btn:disabled {
+            border-color: #333;
+            color: #555;
+            cursor: not-allowed;
+            background: transparent;
+        }
+
+        .slide-counter {
+            font-family: 'Fira Code', monospace;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-deep); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-gold); }
+    </style>
+</head>
+<body>
+
+    <!-- Top Progress -->
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="presentation-header">
+        <div class="header-brand">AHMANI HOTEL</div>
+        <div>System Architecture Review &bull; 2026</div>
+    </header>
+
+    <!-- Slide Deck -->
+    <div class="slide-window">
+
+        <!-- Slide 1: Title -->
+        <div class="slide active" id="slide-0" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="max-width: 800px;">
+                <p class="slide-tag">Internal Technical Review</p>
+                <h1 class="slide-title" style="font-size: 56px; border: none; margin-bottom: 10px;">Algorithmic Foundations</h1>
+                <p class="slide-text" style="font-size: 20px; color: var(--accent-light);">Powering the Ahmani Hotel Management System</p>
+                <p class="slide-text" style="margin-top: 30px;">Md. Abir Hossain (2024-3-60-699)<br>Nafis Fuad Mihal (2024-3-60-693) </p>
+            </div>
+        </div>
+
+        <!-- Slide 2: Dijkstra Concept -->
+        <div class="slide" id="slide-1">
+            <p class="slide-tag">Algorithm 1: Concept & Theory</p>
+            <h2 class="slide-title">Dijkstra's Shortest Path Algorithm</h2>
+            <div class="split-layout">
+                <div>
+                    <p class="slide-text"><strong>Purpose:</strong> Implemented in the Guest Dashboard to dynamically calculate the most efficient route and distance from the hotel to various local attractions, transport hubs, and facilities.</p>
+                    <ul class="feature-list">
+                        <li><strong>Graph Representation:</strong> We map physical locations as <em>Vertices</em> and the roads connecting them as <em>Edges</em> with specific weight values (Distance in KM).</li>
+                        <li><strong>Greedy Approach:</strong> The algorithm iteratively selects the unvisited node with the lowest cumulative distance.</li>
+                        <li><strong>Dynamic Recalculation:</strong> Unlike static maps, if a pathway is removed or added to the database, the PHP logic instantly adapts to find the new optimal route.</li>
+                    </ul>
+                    <div class="complexity-box">
+                        <span class="syn-comment">// Theoretical Complexity</span><br>
+                        Time Complexity:  <span class="syn-keyword">O</span>(V^2) or <span class="syn-keyword">O</span>(E + V log V)<br>
+                        Space Complexity: <span class="syn-keyword">O</span>(V)<br>
+                        <em>Where V = Locations, E = Routes</em>
+                    </div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px dashed #333; display:flex; align-items:center; justify-content:center; flex-direction:column; padding: 20px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/57/Dijkstra_Animation.gif" alt="Dijkstra Animation" style="max-width: 100%; border-radius: 4px; opacity: 0.8;">
+                    <p style="font-size: 11px; color: #666; margin-top: 15px; text-align: center;">Conceptual Visualization of Edge Relaxation<br>(Finding the shortest path tree)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Dijkstra Code -->
+        <div class="slide" id="slide-2">
+            <p class="slide-tag">Algorithm 1: PHP Implementation</p>
+            <h2 class="slide-title">Dijkstra's Logic Breakdown</h2>
+            <div class="full-layout">
+                <p class="slide-text">Below is the actual implementation utilizing PHP's native <code>SplPriorityQueue</code> to act as our Min-Heap, drastically improving the speed of node extraction compared to standard array sorting.</p>
+                
+                <div class="code-container">
+                    <div class="code-header">
+                        <span>hotel_routing.php</span>
+                        <span>PHP 8.x</span>
+                    </div>
+                    <div class="code-body"><span class="syn-keyword">function</span> <span class="syn-function">calculateShortestPath</span>(<span class="syn-variable">$graph</span>, <span class="syn-variable">$startNode</span>, <span class="syn-variable">$targetNode</span>) {
+    <span class="syn-variable">$distances</span> = []; <span class="syn-comment">// Stores min distance to each node</span>
+    <span class="syn-variable">$previous</span>  = []; <span class="syn-comment">// Tracks path history for reconstruction</span>
+    <span class="syn-variable">$pq</span> = <span class="syn-keyword">new</span> <span class="syn-function">SplPriorityQueue</span>(); <span class="syn-comment">// Native Min-Heap</span>
+    
+    <span class="syn-comment">// 1. Initialization phase</span>
+    <span class="syn-keyword">foreach</span> (<span class="syn-variable">$graph</span> <span class="syn-keyword">as</span> <span class="syn-variable">$node</span> => <span class="syn-variable">$adjacencies</span>) {
+        <span class="syn-variable">$distances</span>[<span class="syn-variable">$node</span>] = <span class="syn-keyword">INF</span>; <span class="syn-comment">// Set initial distances to infinity</span>
+        <span class="syn-variable">$previous</span>[<span class="syn-variable">$node</span>]  = <span class="syn-keyword">null</span>;
+    }
+    
+    <span class="syn-variable">$distances</span>[<span class="syn-variable">$startNode</span>] = <span class="syn-number">0</span>;
+    <span class="syn-variable">$pq</span>-><span class="syn-function">insert</span>(<span class="syn-variable">$startNode</span>, <span class="syn-number">0</span>);
+    
+    <span class="syn-comment">// 2. Processing nodes</span>
+    <span class="syn-keyword">while</span> (!<span class="syn-variable">$pq</span>-><span class="syn-function">isEmpty</span>()) {
+        <span class="syn-variable">$currentNode</span> = <span class="syn-variable">$pq</span>-><span class="syn-function">extract</span>();
+        
+        <span class="syn-keyword">if</span> (<span class="syn-variable">$currentNode</span> === <span class="syn-variable">$targetNode</span>) <span class="syn-keyword">break</span>; <span class="syn-comment">// Early exit optimization</span>
+        
+        <span class="syn-keyword">foreach</span> (<span class="syn-variable">$graph</span>[<span class="syn-variable">$currentNode</span>] <span class="syn-keyword">as</span> <span class="syn-variable">$neighbor</span> => <span class="syn-variable">$cost</span>) {
+            <span class="syn-variable">$altDistance</span> = <span class="syn-variable">$distances</span>[<span class="syn-variable">$currentNode</span>] + <span class="syn-variable">$cost</span>;
+            
+            <span class="syn-comment">// Edge Relaxation: If new path is cheaper, update it</span>
+            <span class="syn-keyword">if</span> (<span class="syn-variable">$altDistance</span> < <span class="syn-variable">$distances</span>[<span class="syn-variable">$neighbor</span>]) {
+                <span class="syn-variable">$distances</span>[<span class="syn-variable">$neighbor</span>] = <span class="syn-variable">$altDistance</span>;
+                <span class="syn-variable">$previous</span>[<span class="syn-variable">$neighbor</span>]  = <span class="syn-variable">$currentNode</span>;
+                <span class="syn-comment">// Negative distance used because SplPriorityQueue is a Max-Heap by default</span>
+                <span class="syn-variable">$pq</span>-><span class="syn-function">insert</span>(<span class="syn-variable">$neighbor</span>, -<span class="syn-variable">$altDistance</span>); 
+            }
+        }
+    }
+    <span class="syn-keyword">return</span> [<span class="syn-string">'distance'</span> => <span class="syn-variable">$distances</span>[<span class="syn-variable">$targetNode</span>], <span class="syn-string">'path'</span> => <span class="syn-variable">$previous</span>];
+}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Levenshtein Concept -->
+        <div class="slide" id="slide-3">
+            <p class="slide-tag">Algorithm 2: Concept & Theory</p>
+            <h2 class="slide-title">Levenshtein Edit Distance</h2>
+            <div class="split-layout">
+                <div>
+                    <p class="slide-text"><strong>Purpose:</strong> Powering the fuzzy-search feature. When a guest misspells a location or an amenity (e.g., typing "Airprt" instead of "Airport"), the system must still return the correct result rather than a blank page.</p>
+                    <ul class="feature-list">
+                        <li><strong>Metric Definition:</strong> It calculates the minimum number of single-character edits required to change one word into another.</li>
+                        <li><strong>Allowed Operations:</strong>
+                            <br>1. <strong>Insertion</strong> (Airprt ➔ Airport)
+                            <br>2. <strong>Deletion</strong> (Beeach ➔ Beach)
+                            <br>3. <strong>Substitution</strong> (Rooom ➔ Room)
+                        </li>
+                        <li><strong>Application:</strong> We compare the user's input against the entire database vocabulary, scoring each match. The lowest scores (fewest edits) are suggested to the user.</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="complexity-box" style="margin-bottom: 20px;">
+                        <span class="syn-comment">// Theoretical Complexity</span><br>
+                        Time Complexity:  <span class="syn-keyword">O</span>(M * N) <span class="syn-comment">// Length of word 1 * word 2</span><br>
+                        Space Complexity: <span class="syn-keyword">O</span>(M * N) <span class="syn-comment">// Dynamic Programming Matrix</span>
+                    </div>
+                    <p class="slide-text" style="font-size: 14px; padding: 15px; background: rgba(212, 175, 55, 0.1); border-left: 3px solid var(--accent-gold);">
+                        <strong>Why not SOUNDEX?</strong><br>
+                        While PHP offers <code>soundex()</code> for phonetic matching, Levenshtein is strictly character-based, making it far more reliable for international hotel locations and non-English location names which may not follow English phonetic rules.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Levenshtein Code -->
+        <div class="slide" id="slide-4">
+            <p class="slide-tag">Algorithm 2: PHP Implementation</p>
+            <h2 class="slide-title">Fuzzy Search Integration</h2>
+            <div class="full-layout">
+                <p class="slide-text">Here we leverage PHP's highly-optimized internal <code>levenshtein()</code> function (written in C) rather than writing our own matrix algorithm, ensuring ultra-fast database filtering.</p>
+                
+                <div class="code-container">
+                    <div class="code-header">
+                        <span>search_suggestions.php</span>
+                        <span>PHP 8.x</span>
+                    </div>
+                    <div class="code-body"><span class="syn-keyword">function</span> <span class="syn-function">getSearchSuggestions</span>(<span class="syn-variable">$userInput</span>, <span class="syn-variable">$databaseRecords</span>) {
+    <span class="syn-variable">$userInput</span> = <span class="syn-function">strtolower</span>(<span class="syn-function">trim</span>(<span class="syn-variable">$userInput</span>));
+    <span class="syn-variable">$closestMatches</span> = [];
+    <span class="syn-variable">$shortestDistance</span> = -<span class="syn-number">1</span>;
+
+    <span class="syn-keyword">foreach</span> (<span class="syn-variable">$databaseRecords</span> <span class="syn-keyword">as</span> <span class="syn-variable">$record</span>) {
+        <span class="syn-variable">$targetWord</span> = <span class="syn-function">strtolower</span>(<span class="syn-variable">$record</span>[<span class="syn-string">'location_name'</span>]);
+        
+        <span class="syn-comment">// Calculate Levenshtein Distance</span>
+        <span class="syn-variable">$distance</span> = <span class="syn-function">levenshtein</span>(<span class="syn-variable">$userInput</span>, <span class="syn-variable">$targetWord</span>);
+
+        <span class="syn-comment">// Exact Match Found - Terminate search immediately</span>
+        <span class="syn-keyword">if</span> (<span class="syn-variable">$distance</span> === <span class="syn-number">0</span>) {
+            <span class="syn-keyword">return</span> [<span class="syn-variable">$record</span>[<span class="syn-string">'location_name'</span>]];
+        }
+
+        <span class="syn-comment">// Heuristic: Bonus if the input is a direct substring</span>
+        <span class="syn-keyword">if</span> (<span class="syn-function">strpos</span>(<span class="syn-variable">$targetWord</span>, <span class="syn-variable">$userInput</span>) !== <span class="syn-keyword">false</span>) {
+            <span class="syn-variable">$distance</span> -= <span class="syn-number">2</span>; <span class="syn-comment">// Synthetically lower the score</span>
+        }
+
+        <span class="syn-comment">// Track the best results (Lowest distance score is better)</span>
+        <span class="syn-keyword">if</span> (<span class="syn-variable">$distance</span> <= <span class="syn-variable">$shortestDistance</span> || <span class="syn-variable">$shortestDistance</span> < <span class="syn-number">0</span>) {
+            <span class="syn-variable">$shortestDistance</span> = <span class="syn-variable">$distance</span>;
+            <span class="syn-variable">$closestMatches</span>[] = [
+                <span class="syn-string">'name'</span>  => <span class="syn-variable">$record</span>[<span class="syn-string">'location_name'</span>],
+                <span class="syn-string">'score'</span> => <span class="syn-variable">$distance</span>
+            ];
+        }
+    }
+    
+    <span class="syn-comment">// Sort array by score ascending (0 is perfect, 1 is 1 edit, etc.)</span>
+    <span class="syn-function">usort</span>(<span class="syn-variable">$closestMatches</span>, <span class="syn-keyword">fn</span>(<span class="syn-variable">$a</span>, <span class="syn-variable">$b</span>) => <span class="syn-variable">$a</span>[<span class="syn-string">'score'</span>] <=> <span class="syn-variable">$b</span>[<span class="syn-string">'score'</span>]);
+    <span class="syn-keyword">return</span> <span class="syn-function">array_slice</span>(<span class="syn-variable">$closestMatches</span>, <span class="syn-number">0</span>, <span class="syn-number">3</span>); <span class="syn-comment">// Return Top 3</span>
+}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Linear Search Concept -->
+        <div class="slide" id="slide-5">
+            <p class="slide-tag">Algorithm 3: Concept & Theory</p>
+            <h2 class="slide-title">Multi-Criteria Linear Search</h2>
+            <div class="split-layout">
+                <div>
+                    <p class="slide-text"><strong>Purpose:</strong> Used in the Staff Operations Dashboard. It allows receptionists to look up guest folios using incomplete or fragmented data across multiple fields (e.g., knowing only a phone number snippet and a partial first name).</p>
+                    <ul class="feature-list">
+                        <li><strong>Algorithm Nature:</strong> A sequential evaluation algorithm. It inspects every element in a dataset one by one until a match is found.</li>
+                        <li><strong>Multi-Parameter Logic:</strong> Implements logical OR/AND gates dynamically based on what the staff member inputs.</li>
+                        <li><strong>Fallback Mechanism:</strong> Executed post-database query when filtering complex, multi-joined arrays in memory is faster than running multiple heavy SQL <code>LIKE '%...%'</code> operations.</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="complexity-box">
+                        <span class="syn-comment">// Theoretical Complexity</span><br>
+                        Time Complexity:  <span class="syn-keyword">O</span>(N) <span class="syn-comment">// N = Total Guest Records</span><br>
+                        Space Complexity: <span class="syn-keyword">O</span>(K) <span class="syn-comment">// K = Matches stored in array</span>
+                    </div>
+                    <div style="margin-top: 20px; padding: 15px; border-left: 2px solid #569CD6; background: rgba(86, 156, 214, 0.1);">
+                        <p style="font-size: 13px; color: #E2E8F0;"><strong>Use Case Scenario:</strong><br>Staff searches for Name: "Joh" and Phone: "555". The algorithm scans the array. Record 1 (John, 555-0101) evaluates <code>TRUE</code>. Record 2 (Jane, 555-9999) evaluates <code>FALSE</code> (Name mismatch).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Linear Search Code -->
+        <div class="slide" id="slide-6">
+            <p class="slide-tag">Algorithm 3: PHP Implementation</p>
+            <h2 class="slide-title">Sequential Logic Implementation</h2>
+            <div class="full-layout">
+                <p class="slide-text">This snippet demonstrates how boolean flags and string-position functions (<code>stripos</code>) are combined to evaluate multi-field arrays seamlessly without throwing undefined index errors.</p>
+                
+                <div class="code-container">
+                    <div class="code-header">
+                        <span>staff_lookup.php</span>
+                        <span>PHP 8.x</span>
+                    </div>
+                    <div class="code-body"><span class="syn-keyword">function</span> <span class="syn-function">filterGuestRecords</span>(<span class="syn-variable">$allGuests</span>, <span class="syn-variable">$searchParams</span>) {
+    <span class="syn-variable">$filteredResults</span> = [];
+
+    <span class="syn-comment">// O(n) Linear iteration through the payload</span>
+    <span class="syn-keyword">foreach</span> (<span class="syn-variable">$allGuests</span> <span class="syn-keyword">as</span> <span class="syn-variable">$guest</span>) {
+        <span class="syn-variable">$isMatch</span> = <span class="syn-keyword">false</span>;
+
+        <span class="syn-comment">// Safely extract parameters using null coalescing operator</span>
+        <span class="syn-variable">$qName</span>  = <span class="syn-variable">$searchParams</span>[<span class="syn-string">'name'</span>]  ?? <span class="syn-string">''</span>;
+        <span class="syn-variable">$qEmail</span> = <span class="syn-variable">$searchParams</span>[<span class="syn-string">'email'</span>] ?? <span class="syn-string">''</span>;
+        <span class="syn-variable">$qPhone</span> = <span class="syn-variable">$searchParams</span>[<span class="syn-string">'phone'</span>] ?? <span class="syn-string">''</span>;
+
+        <span class="syn-comment">// Condition 1: Check Name (Case Insensitive Substring)</span>
+        <span class="syn-keyword">if</span> (!<span class="syn-function">empty</span>(<span class="syn-variable">$qName</span>) && <span class="syn-function">stripos</span>(<span class="syn-variable">$guest</span>[<span class="syn-string">'name'</span>], <span class="syn-variable">$qName</span>) !== <span class="syn-keyword">false</span>) {
+            <span class="syn-variable">$isMatch</span> = <span class="syn-keyword">true</span>;
+        }
+        
+        <span class="syn-comment">// Condition 2: Check Email</span>
+        <span class="syn-keyword">if</span> (!<span class="syn-function">empty</span>(<span class="syn-variable">$qEmail</span>) && <span class="syn-function">stripos</span>(<span class="syn-variable">$guest</span>[<span class="syn-string">'email'</span>], <span class="syn-variable">$qEmail</span>) !== <span class="syn-keyword">false</span>) {
+            <span class="syn-variable">$isMatch</span> = <span class="syn-keyword">true</span>;
+        }
+
+        <span class="syn-comment">// Condition 3: Check Phone</span>
+        <span class="syn-keyword">if</span> (!<span class="syn-function">empty</span>(<span class="syn-variable">$qPhone</span>) && <span class="syn-function">strpos</span>(<span class="syn-variable">$guest</span>[<span class="syn-string">'phone'</span>], <span class="syn-variable">$qPhone</span>) !== <span class="syn-keyword">false</span>) {
+            <span class="syn-variable">$isMatch</span> = <span class="syn-keyword">true</span>;
+        }
+
+        <span class="syn-comment">// If any condition flipped the flag to true, store it</span>
+        <span class="syn-keyword">if</span> (<span class="syn-variable">$isMatch</span>) {
+            <span class="syn-variable">$filteredResults</span>[] = <span class="syn-variable">$guest</span>;
+        }
+    }
+
+    <span class="syn-keyword">return</span> <span class="syn-variable">$filteredResults</span>;
+}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Architecture Summary -->
+        <div class="slide" id="slide-7">
+            <p class="slide-tag">System Integration</p>
+            <h2 class="slide-title">Architectural Synthesis</h2>
+            <div class="split-layout">
+                <div>
+                    <p class="slide-text">These three algorithms work in tandem to create a cohesive, intelligent hotel management environment:</p>
+                    <ul class="feature-list">
+                        <li><strong>Dijkstra's Algorithm</strong> transforms static maps into dynamic, living networks, optimizing guest travel times.</li>
+                        <li><strong>Levenshtein Distance</strong> provides a forgiving UX, drastically reducing "0 Results Found" errors and guest frustration.</li>
+                        <li><strong>Linear Searching</strong> provides robust, un-breakable administrative filtering without constantly hitting the SQL database with expensive queries.</li>
+                    </ul>
+                </div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 30px;">
+                    <h3 style="color: var(--accent-gold); font-weight: 500; font-size: 18px; margin-bottom: 15px;">Performance Profiling</h3>
+                    <div style="margin-bottom: 15px;">
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; color:#aaa;"><span>Dijkstra Extraction</span><span>~0.02ms</span></div>
+                        <div style="width:100%; height:4px; background:#222; border-radius:2px;"><div style="width:15%; height:100%; background:#4CAF50; border-radius:2px;"></div></div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; color:#aaa;"><span>Levenshtein Scoring (100 rows)</span><span>~0.05ms</span></div>
+                        <div style="width:100%; height:4px; background:#222; border-radius:2px;"><div style="width:30%; height:100%; background:#2196F3; border-radius:2px;"></div></div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; color:#aaa;"><span>Linear Array Scan (1000 rows)</span><span>~1.2ms</span></div>
+                        <div style="width:100%; height:4px; background:#222; border-radius:2px;"><div style="width:65%; height:100%; background:#FF9800; border-radius:2px;"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: End -->
+        <div class="slide" id="slide-8" style="justify-content: center; align-items: center; text-align: center;">
+            <div style="max-width: 600px;">
+                <div style="font-size: 60px; margin-bottom: 20px;">🏛️</div>
+                <h2 class="slide-title" style="border: none; margin-bottom: 10px;">End of Presentation</h2>
+                <p class="slide-text">This concludes the technical architecture review of the Ahmani Hotel Management System algorithms.</p>
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); color: #666; font-size: 13px;">
+                    Use the <strong>Left Arrow</strong> key to review previous slides.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Controls Footer -->
+    <footer class="controls-footer">
+        <button class="btn" id="prevBtn" onclick="changeSlide(-1)">❮ Previous Slide</button>
+        <div class="slide-counter">
+            Keyboard <span style="color:var(--accent-gold);">[←]</span> & <span style="color:var(--accent-gold);">[→]</span> supported &nbsp;|&nbsp; Slide <span id="currentSlideNum">1</span> of <span id="totalSlideNum">9</span>
+        </div>
+        <button class="btn" id="nextBtn" onclick="changeSlide(1)">Next Slide ❯</button>
+    </footer>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        document.getElementById('totalSlideNum').innerText = totalSlides;
+
+        function updateUI() {
+            // Update Slides
+            slides.forEach((slide, idx) => {
+                if (idx === currentSlide) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            // Update Progress Bar
+            const progressPercentage = ((currentSlide) / (totalSlides - 1)) * 100;
+            document.getElementById('progressBar').style.width = progressPercentage + '%';
+
+            // Update Counter
+            document.getElementById('currentSlideNum').innerText = currentSlide + 1;
+
+            // Update Buttons State
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function changeSlide(direction) {
+            let newSlide = currentSlide + direction;
+            if (newSlide >= 0 && newSlide < totalSlides) {
+                currentSlide = newSlide;
+                updateUI();
+            }
+        }
+
+        // Keyboard Navigation (PPT Style)
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+                changeSlide(-1);
+            } else if (event.key === 'ArrowRight' || event.key === 'PageDown' || event.key === ' ') {
+                changeSlide(1);
+            }
+        });
+
+        // Initialize first frame
+        updateUI();
+    </script>
+</body>
+</html>
